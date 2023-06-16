@@ -1,0 +1,25 @@
+---
+- name: add IPv4  address group
+  hosts: fortigates
+  collections:
+    - fortinet.fortios
+  connection: httpapi
+
+  vars:
+    vdom: "root"
+    ansible_httpapi_use_ssl: yes
+    ansible_httpapi_validate_certs: no
+    ansible_httpapi_port: 443
+
+  tasks:
+    - name: configure group
+      fortios_firewall_addrgrp:
+        vdom: "{{ vdom }}"
+        state: "present"
+        access_token: "{{ token }}"
+        firewall_addrgrp:
+          name: "test-group"
+          color: "0"
+          comment: "Teste group created with ansible"
+          visibility: "enable"
+          member: "{{ members }}"

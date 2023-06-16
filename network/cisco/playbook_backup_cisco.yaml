@@ -1,0 +1,28 @@
+---
+- name: backup configuration
+  hosts: cisco
+  gather_facts: false
+  connection: network_cli
+
+  vars:
+    backup_root: ./backups
+
+  tasks:
+    - name: show runnning-config on remote devices
+      ios_command:
+        commands: "show running-config"
+      register: config
+
+    - name: create backup folder
+      file:
+        path: "{{ backup_root }}/{{ ansible_host }}"
+        state: directory
+
+    - name: get timestamp
+      command: date +%Y%m%d
+      register: timestamp
+          
+    - name: save backup
+      copy:
+        content: "{{ config.stdout[0] }}"
+        dest: "{{ backup_root }}/{{ ansible_host }}/running-config_{{ timestamp.stdout }}"

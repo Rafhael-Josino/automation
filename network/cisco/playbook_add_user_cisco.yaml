@@ -1,0 +1,39 @@
+---
+- name: user configuration
+  hosts: cisco
+  gather_facts: false
+  connection: network_cli
+
+  vars:
+    backup_root: ./backups
+
+  tasks:
+    - name: add user
+      ios_user:
+        name: "{{ new_username }}"
+        configured_password: "{{ new_password }}"
+        password_type: secret
+        privilege: 15
+
+    - name: save config
+      ios_config:
+        save_when: always
+
+    - name: show runnning-config on remote devices
+      ios_command:
+        commands: "show running-config"
+      register: config
+
+    - name: ensure device rolder is created
+      file:
+        path: "{{ backup_root }}/{{ ansible_host }}"
+        state: directory
+
+    - name: get timestamp
+      command: date +%Y%m%d
+      register: timestamp
+
+    - name: get/copy backup
+      copy:
+        content: "{{ config.stdout[0] }}"
+        dest: "{{ backup_root }}/{{ ansible_host }}/running-config_{{ timestamp.stdout }}"

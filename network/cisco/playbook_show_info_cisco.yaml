@@ -1,0 +1,59 @@
+---
+- name: backup configuration
+  hosts: cisco
+  gather_facts: false
+  connection: network_cli
+
+  vars:
+    backup_root: ./info
+
+  tasks:
+    - name: show cdp protocol neightbors
+      ios_command:
+        commands: "show cdp nei"
+      register: command_output
+
+    - name: fisrt process output
+      set_fact:
+        cumulative_output: "{{ cumulative_output|default([]) + [command_output.stdout[0]] }}"
+
+    - name: show connected interfaces status
+      ios_command:
+        commands: "show int status | i ted"
+      register: command_output
+
+    - name: second process output
+      set_fact:
+        cumulative_output: "{{ cumulative_output|default([]) + [command_output.stdout[0]] }}"
+
+    - name: show all interfaces IP
+      ios_command:
+        commands: "show ip int br"
+      register: command_output
+
+    - name: third process output
+      set_fact:
+        cumulative_output: "{{ cumulative_output|default([]) + [command_output.stdout[0]] }}"
+
+    - name: show all interfaces description
+      ios_command:
+        commands: "show int des"
+      register: command_output
+
+    - name: fourth process output
+      set_fact:
+        cumulative_output: "{{ cumulative_output|default([]) + [command_output.stdout[0]] }}"
+
+    - name: ensure device folder is created
+      file:
+        path: "{{ backup_root }}/{{ name }}"
+        state: directory
+
+    - name: get timestamp
+      command: date +%Y%m%d
+      register: timestamp
+          
+    - name: get/copy backup
+      copy:
+        content: "{{ cumulative_output|join('\n') }}"
+        dest: "{{ backup_root }}/{{ name }}/connectivity_info_{{ timestamp.stdout }}"
