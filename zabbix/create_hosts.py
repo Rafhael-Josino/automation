@@ -23,21 +23,24 @@ groups = list(map(lambda name: {"groupid": zapi.get_id(item_type="hostgroup", it
 templates  = list(map(lambda name: {"templateid": zapi.get_id(item_type="template", item=name)}, groups_and_templates.templates))
 
 # Creating new host
-new_host = zapi.host.create(
-	host = argv[1],
-	status = 0,
-	interfaces = [{
-		"type": 1,
-		"main": "1",
-		"useip": 1,
-		"ip": argv[2],
-		"dns": "",
-		"port": 10050
-	}],
-	groups = groups,
-	templates = templates,
-	description= argv[3]
-)
+try:
+	new_host = zapi.host.create(
+		host = argv[1],
+		status = 0,
+		interfaces = [{
+			"type": 1,
+			"main": "1",
+			"useip": 1,
+			"ip": argv[2],
+			"dns": "",
+			"port": 10050
+		}],
+		groups = groups,
+		templates = templates,
+		description= argv[3]
+	)
 
-
-print("Host", argv[1], "id:", new_host, "created with success")
+	print("Host", argv[1], "id:", new_host, "created with success")
+except Exception as e:
+	print("Error at creating host", argv[1])
+	print(e.__str__())
