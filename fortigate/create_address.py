@@ -1,21 +1,19 @@
+'''
+Registers an address in the Fortigate and, if the third argument was passed
+adds it to the specified group address
+In the case that the new address's subnet already is registered under an existing
+address, a warning is printed and the first of such addresses (it can be one or more)
+is added to the group (if specified)
+
+Arguments:
+argv[1] -> New address's subnet
+argv[2] -> New address's name 
+argv[3] -> Group where the new address will be added (optional)
+'''
+
 from fortigate_api import FortigateAPI
 from sys import argv
 import fgt_access
-
-#######################################################################################
-
-# Registers an address in the Fortigate and, if the third argument was passed
-# adds it to the specified group address
-# In the case that the new address's subnet already is registered under an existing
-# address, a warning is printed and the first of such addresses (it can be one or more)
-# is added to the group (if specified)
-
-# Arguments:
-# argv[1] -> New address's subnet
-# argv[2] -> New address's name 
-# argv[3] -> Group where the new address will be added (optional)
-
-#######################################################################################
 
 
 fgt = FortigateAPI(host=fgt_access.fgt_address, token=fgt_access.fgt_token)
