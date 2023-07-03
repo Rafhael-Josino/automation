@@ -10,7 +10,7 @@ width of the box.
 are both mutually excludents
 '''
 
-def add_element(zapi, sysmapid, hosts, iconid, x0, y0, spacement, width=None, height=None):
+def add_element(zapi, sysmapid, hosts, iconid, x0, y0, spacement, width=None, height=None, counter=0):
 	limit = (width or height)
 	if limit == None or limit == 0:
 		print("Error with the limiting dimension")
@@ -31,13 +31,25 @@ def add_element(zapi, sysmapid, hosts, iconid, x0, y0, spacement, width=None, he
 
 	x = 0
 	y = 0
-	counter = 0
 
-	print('limit:', limit)
+	print("limit:", limit)
+	print("spacement:", spacement)
 	print("(x0,y0): ({},{})".format(x0,y0))
 
 	# Creates the new elements
 	for host in hosts:
+
+		# Update next position
+		# Filling by line
+		if width:
+			x = (counter % limit) * spacement
+			y = (counter // limit) * spacement
+			counter += 1
+
+		# Make filling by column
+		elif column:
+			pass
+
 		new_selement = {
 			"elements": [host],
 			"elementtype": 0,
@@ -50,16 +62,5 @@ def add_element(zapi, sysmapid, hosts, iconid, x0, y0, spacement, width=None, he
 		}
 
 		selements.append(new_selement)
-
-		# Update next position
-		# Fulling by line
-		if width:
-			counter += 1
-			x = (counter % limit) * spacement
-			y = (counter // limit) * spacement
-
-		# Make fulling by column
-		elif column:
-			pass
 
 	zapi.map.update(sysmapid=sysmapid, selements=selements)
