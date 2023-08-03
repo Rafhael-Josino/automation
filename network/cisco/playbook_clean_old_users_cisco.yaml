@@ -24,7 +24,7 @@
 
     - name: ensure device rolder is created
       file:
-        path: "{{ backup_root }}/{{ ansible_host }}"
+        path: "{{ backup_root }}/{{ name }}"
         state: directory
 
     - name: get timestamp
@@ -34,4 +34,4 @@
     - name: get/copy backup
       copy:
         content: "{{ config.stdout[0] }}"
-        dest: "{{ backup_root }}/{{ ansible_host }}/running-config_{{ timestamp.stdout }}"
+        dest: "{{ backup_root }}/{{ name }}/running-config_{{ timestamp.stdout }}"

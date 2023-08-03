@@ -49,11 +49,7 @@
         path: "{{ backup_root }}/{{ name }}"
         state: directory
 
-    - name: get timestamp
-      command: date +%Y%m%d
-      register: timestamp
-          
     - name: get/copy backup
       copy:
         content: "{{ cumulative_output|join('\n') }}"
-        dest: "{{ backup_root }}/{{ name }}/connectivity_info_{{ timestamp.stdout }}"
+        dest: "{{ backup_root }}/{{ name }}/info_{{ name }}"

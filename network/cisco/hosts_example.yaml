@@ -1,0 +1,32 @@
+# Example of a hosts.yaml file
+all:
+  hosts:
+  children:
+    cisco:
+      children:
+        group_A:
+          hosts:
+            sw_A:
+              ansible_host: 10.0.0.1
+              name: sw_A
+        group_B:
+          hosts:
+            sw_B:
+              ansible_host: 10.0.1.1
+              name: sw_B
+      vars:
+        old_users:
+          - name: old_user_name1
+          - name: old_user_name2
+
+        new_username: new_user_name
+        new_password: new_user_pass
+
+        # ansible variables
+        ansible_connection: ansible.netcommon.network_cli
+        ansible_become: yes
+        ansible_become_method: enable
+        ansible_network_os: cisco.ios.ios
+        ansible_user: USERNAME
+        ansible_password: !vault |
+									ENCRYPTED PASSWORD WITH VAULT

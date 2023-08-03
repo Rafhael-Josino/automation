@@ -13,16 +13,16 @@
         commands: "show running-config"
       register: config
 
-    - name: create backup folder
+    - name: ensure device folder is created
       file:
-        path: "{{ backup_root }}/{{ ansible_host }}"
+        path: "{{ backup_root }}/{{ name }}"
         state: directory
 
     - name: get timestamp
       command: date +%Y%m%d
       register: timestamp
           
-    - name: save backup
+    - name: get/copy backup
       copy:
         content: "{{ config.stdout[0] }}"
-        dest: "{{ backup_root }}/{{ ansible_host }}/running-config_{{ timestamp.stdout }}"
+        dest: "{{ backup_root }}/{{ name }}/running-config_{{ timestamp.stdout }}"
