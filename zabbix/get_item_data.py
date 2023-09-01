@@ -12,7 +12,7 @@ calculated from all avarages values by hour
 
 from datetime import datetime
 
-def get_item_data(zapi, itemids, time_from, time_till):
+def get_item_data(zapi, itemids, time_from, time_till, print_error=False):
 	try:
 		trend = zapi.trend.get(
 			itemids=itemids,
@@ -45,4 +45,5 @@ def get_item_data(zapi, itemids, time_from, time_till):
 		}
 	
 	except Exception as e:
-		print("Failed\n{}".format(e.__str__()))
+		if print_error:
+			print("Failed\n{}".format(e.__str__()))

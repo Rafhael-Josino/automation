@@ -1,36 +1,19 @@
 '''
-This code calculates the avarage network device interface ingoing traffic by week,
-separating in two periods as it intends to compare the network consume between them
-For example, a network provider wants to check how much its service is being consumed
-after aquires a new client.
-
-The code returns the avarage traffic by week as it follows:
-- A full journey day: 8-12h and 13h-17h
-- A half journey day: 8-12h
-- A week: 4 full journey days and 1 half jouney day (friday)
-This is for a hipotical scenario
-
-The inventory of the itens and days monitored are in the file monitored_days.py
-Each week need to be defined simply by its first day.
-There are two arrays od mondays represents each a period.
-
-An interface dictionary has the structure:
-	{
-		"id": string,
-		"name": string
-	}
-where "id" is its item id in the Zabbix
 '''
 
-from sys import argv
 from datetime import datetime, timedelta
+from colorama import init
+from termcolor import colored
 from pyzabbix.api import ZabbixAPI
+
 import zabbixAccess
 from get_item_data import get_item_data
-from monitored_days import interfaces, days0, days1
+from interfaces_OMs import interfaces, days0, days
 
 
 zapi = ZabbixAPI(url=zabbixAccess.url, user=zabbixAccess.user, password=zabbixAccess.password)
+init()
+
 
 def collect_week_day(day, itemid, print_data=False, full_journey=True):
 	time_from = day.timestamp()
@@ -46,30 +29,48 @@ def collect_week_day(day, itemid, print_data=False, full_journey=True):
 
 	if print_data:
 		print("Day", day)
-		print("Morning period")
+		print("Morning period: 8h-12h")
 		print(values1)
 		if full_journey:
-			print("Afternoon period")
+			print("Afternoon period: 13h-17h")
 			print(values2)
 		print("\n")
 
+	if values1 == None:
+		print(colored("No data was collected in {} morning".format(day), "yellow"))
+		if full_journey and values2 != None:
+			return values2["value_avg"]
+		else:
+			print(colored("No data was collected in {}".format(day), "red"))
+			return None
+			
 	if full_journey:
 		return (values1["value_avg"] + values2["value_avg"]) / 2
 	else:
 		return values1["value_avg"]
+
 
 def collect_week(day, itemid, print_data=False):
 	if day.weekday():
 		print("Must receive a monday")
 		return None
 
-	mon = collect_week_day(day, itemid, print_data)
-	thi = collect_week_day(day + timedelta(days=1), itemid, print_data)
-	wed = collect_week_day(day + timedelta(days=2), itemid, print_data)
-	thu = collect_week_day(day + timedelta(days=3), itemid, print_data)
-	fri = collect_week_day(day + timedelta(days=4), itemid, print_data, False)
+	weekdays = [0,0,0,0,0]
+	weekdays[0] = collect_week_day(day, itemid, print_data)
+	weekdays[1] = collect_week_day(day + timedelta(days=1), itemid, print_data)
+	weekdays[2] = collect_week_day(day + timedelta(days=2), itemid, print_data)
+	weekdays[3] = collect_week_day(day + timedelta(days=3), itemid, print_data)
+	weekdays[4] = collect_week_day(day + timedelta(days=4), itemid, print_data, False)
 
-	band = (mon + thi + wed + thu + fri) / 5
+	band = 0
+	valid_days = 0
+	for d in weekdays:
+		if d != None:
+			valid_days += 1
+			band += d	
+		
+	band = band / valid_days
+	#band = (mon + thi + wed + thu + fri) / 5
 
 	if band >= 1000000:
 		band = band / 1000000
@@ -79,17 +80,23 @@ def collect_week(day, itemid, print_data=False):
 		return "{:.2f} Kbps".format(band)
 
 
-for i in interfaces:
-	print(i["name"])
+for t in interfaces:
+	print(colored(20 * "-", "green"))
+	print(colored(t["name"], "green"))
+	print(colored(20 * "-", "green"))
 
-	print("Before migration")
+	print(colored("Before migration", "green"))
 	for d in days0:
 		start_day = datetime.strptime(d + " 08:00:00", "%d.%m.%Y %H:%M:%S")
-		avg = collect_week(start_day, i["id"], False)
+		avg = collect_week(start_day, t["id"])
 		print("Week", d, avg)
-	print("After migration")
 
-	for d in days1:
+	print(colored("After migration", "green"))
+
+	for d in days:
 		start_day = datetime.strptime(d + " 08:00:00", "%d.%m.%Y %H:%M:%S")
-		avg = collect_week(start_day, i["id"], False)
+		avg = collect_week(start_day, t["id"])
 		print("Week", d, avg)
+
+	print(colored("\n" + (50 * "#") + "\n", "green"))
+
