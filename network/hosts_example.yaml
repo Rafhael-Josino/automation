@@ -1,0 +1,47 @@
+# Example of a hosts.yaml file
+all:
+  hosts:
+  children:
+    dell:
+      hosts:
+        sw_dell_A:
+          ansible_host: 10.1.0.1
+          name: sw_dell_A
+        sw_dell_B:
+          ansible_host: 10.1.1.1
+          name: sw_dell_B
+
+      vars:
+        ansible_network_os: dellemc.os9.os9
+        ansible_ssh_user: USERNAME
+        ansible_ssh_pass: !vault |
+									ENCRYPTED PASSWORD WITH VAULT
+
+    cisco:
+      children:
+        group_A:
+          hosts:
+            sw_cisco_A:
+              ansible_host: 10.0.0.1
+              name: sw_cisco_A
+        group_B:
+          hosts:
+            sw_cisco_B:
+              ansible_host: 10.0.1.1
+              name: sw_cisco_B
+
+      vars:
+        old_users:
+          - name: old_user_name1
+          - name: old_user_name2
+
+        new_username: new_user_name
+        new_password: new_user_pass
+
+        ansible_connection: ansible.netcommon.network_cli
+        ansible_become: yes
+        ansible_become_method: enable
+        ansible_network_os: cisco.ios.ios
+        ansible_user: USERNAME
+        ansible_password: !vault |
+									ENCRYPTED PASSWORD WITH VAULT

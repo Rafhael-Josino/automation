@@ -1,0 +1,39 @@
+---
+- name: backup configuration
+  hosts: all
+  gather_facts: false
+  connection: network_cli
+
+  vars:
+    backup_root: ./backups
+
+  tasks:
+    - name: show runnning-config on dell devices
+      dellemc.os9.os9_config:
+        backup: yes
+        backup_options:
+          dir_path: "./backups/{{ name }}"
+      when: ansible_network_os == "dellemc.os9.os9"
+
+    - name: show runnning-config on remote devices
+      ios_command:
+        commands: "show running-config"
+      register: config
+      when: ansible_network_os == "cisco.ios.ios"
+
+    - name: ensure device folder is created
+      file:
+        path: "{{ backup_root }}/{{ name }}"
+        state: directory
+      when: ansible_network_os == "cisco.ios.ios"
+
+    - name: get timestamp
+      command: date +%Y%m%d
+      register: timestamp
+      when: ansible_network_os == "cisco.ios.ios"
+          
+    - name: get/copy backup
+      copy:
+        content: "{{ config.stdout[0] }}"
+        dest: "{{ backup_root }}/{{ name }}/running-config_{{ timestamp.stdout }}"
+      when: ansible_network_os == "cisco.ios.ios"
