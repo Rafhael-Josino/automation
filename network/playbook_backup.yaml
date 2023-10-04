@@ -8,32 +8,50 @@
     backup_root: ./backups
 
   tasks:
-    - name: show runnning-config on dell devices
+    - name: show runnning-config on dell os9 devices
       dellemc.os9.os9_config:
         backup: yes
         backup_options:
           dir_path: "./backups/{{ name }}"
       when: ansible_network_os == "dellemc.os9.os9"
 
-    - name: show runnning-config on remote devices
+    - name: show runnning-config on dell os10 devices
+      dellemc.os10.os10_config:
+        backup: yes
+        save: no
+      register: config_dell_os10
+      when: ansible_network_os == "dellemc.os10.os10"
+
+    - name: show runnning-config on cisco devices
       ios_command:
         commands: "show running-config"
-      register: config
+      register: config_cisco
       when: ansible_network_os == "cisco.ios.ios"
+
+    # The tasks bellow are not necessary for dell os9 devices, once its module
+    # does the work of create the required directory when needed and save the file
+    # Due to some bug, the dell os10 module doesn't do this, so a work around is necessary
 
     - name: ensure device folder is created
       file:
         path: "{{ backup_root }}/{{ name }}"
         state: directory
-      when: ansible_network_os == "cisco.ios.ios"
-
+      when: ansible_network_os == "cisco.ios.ios" or ansible_network_os == "dellemc.os10.os10"
+		
     - name: get timestamp
       command: date +%Y%m%d
       register: timestamp
-      when: ansible_network_os == "cisco.ios.ios"
+      when: ansible_network_os == "cisco.ios.ios" or ansible_network_os == "dellemc.os10.os10"
           
-    - name: get/copy backup
+    - name: save running-config of dell os10 to file
+      local_action:
+        module: copy
+        content: "{{ config_dell_os10['__backup__'] }}"
+        dest: "{{ backup_root }}/{{ name }}/{{ name }}_run-config_{{ timestamp.stdout }}"
+      when: ansible_network_os == "dellemc.os10.os10"
+
+    - name: save running-config of cisco to file
       copy:
-        content: "{{ config.stdout[0] }}"
-        dest: "{{ backup_root }}/{{ name }}/running-config_{{ timestamp.stdout }}"
+        content: "{{ config_cisco.stdout[0] }}"
+        dest: "{{ backup_root }}/{{ name }}/{{ name }}_run-config_{{ timestamp.stdout }}"
       when: ansible_network_os == "cisco.ios.ios"
