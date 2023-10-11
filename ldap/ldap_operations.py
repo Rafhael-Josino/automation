@@ -1,5 +1,5 @@
-from ldap3 import Server, Connection, ALL
-from ldap_access import server_address, private_user_dn
+from ldap3 import Server, Connection, ALL, MODIFY_ADD, MODIFY_DELETE
+from ldap_access import server_address, private_path
 
 server = Server(server_address, get_info=ALL)
 conn = Connection(server, auto_bind=True)
@@ -8,17 +8,17 @@ conn.start_tls()
 
 def get_user(user_name):
 	conn.search(
-		"dc=21ct,dc=eb,dc=mil,dc=br",
+		private_path,
 		'(&(objectclass=person)(uid={}))'.format(user_name),
 		attributes=['uidNumber'],
 	)
 
-	return conn.entries[0]
+	return conn.entries
 
 
 def get_users_from_group(group_name):
 	conn.search(
-		"ou=groups,dc=21ct,dc=eb,dc=mil,dc=br",
+		"ou=groups,{}".format(private_path),
 		'(cn={})'.format(group_name),
 		attributes=['memberUid']
 	)
@@ -27,8 +27,10 @@ def get_users_from_group(group_name):
 
 
 def check_user_in_group(user_name, group_name):
-	'''private_user_dn() returns the user's dn according to the costumer's ldap structure'''
-	if private_user_dn(user_name) in get_users_from_group(group_name):
+	user = "uid={},ou=People,{}".format(user_name, private_path)
+
+	if user in get_users_from_group(group_name):
 		return True
+
 	else:
 		return False
