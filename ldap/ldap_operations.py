@@ -1,19 +1,37 @@
 from ldap3 import Server, Connection, ALL, MODIFY_ADD, MODIFY_DELETE
-from ldap_access import server_address, private_path
+from ldap_access import server_address, ldap_credentials, private_path
 
 server = Server(server_address, get_info=ALL)
-conn = Connection(server, auto_bind=True)
-conn.start_tls()
+conn = Connection(server, ldap_credentials["login"], ldap_credentials["password"], auto_bind=True)
 
 
-def get_user(user_name):
+def get_user(user_name, attributes=[]):
 	conn.search(
 		private_path,
 		'(&(objectclass=person)(uid={}))'.format(user_name),
-		attributes=['uidNumber'],
+		attributes=attributes,
 	)
 
 	return conn.entries
+
+
+def list_groups(detail=False):
+	conn.search(
+		"ou=groups,{}".format(private_path),
+		"(cn=*)",
+		attributes=['description', 'cn', 'memberUid']
+	)
+
+	for group in conn.entries:
+		if detail:
+			print(
+				group.cn,
+				"\tDescription: {}".format(group.description),
+				"\tTotal members: {}\n".format(len(group.memberUid)),
+				sep="\n"
+			)	
+		else:
+			print(group.cn, group.description)
 
 
 def get_users_from_group(group_name):
@@ -34,3 +52,17 @@ def check_user_in_group(user_name, group_name):
 
 	else:
 		return False
+
+
+def add_user_to_group(user_name, group_name):
+	conn.modify(
+		"cn={},ou=groups,{}".format(group_name, private_path),
+		{ "memberUid": [( MODIFY_ADD, ["uid={},ou=People,{}".format(user_name, private_path)] )] },
+	)
+
+
+def del_user_from_group(user_name, group_name):
+	conn.modify(
+		"cn={},ou=groups,{}".format(group_name, private_path),
+		{ "memberUid": [( MODIFY_DELETE, ["uid={},ou=People,{}".format(user_name, private_path)] )] },
+	)
