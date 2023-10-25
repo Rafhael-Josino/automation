@@ -5,7 +5,10 @@ def get_host(zapi, host_name):
 		return zapi.host.get(
 			filter={"host": host_name},
 			output=["host", "hostid", "description", "template"],
-			selectParentTemplates=["id", "name"],
+			# Versao 5
+			#selectParentTemplates=["id", "name"],
+			# Versao 6
+			selectParentTemplates=["templateid", "name"],
 			selectInterfaces=["ip"]
 		)
 	except Exception as e:
@@ -26,6 +29,51 @@ def get_host_by_group(zapi, group_id):
 	except Exception as e:
 		print(e.__str__())
 
+
+def add_host(zapi, name, ip, community, description, groups, templates):
+	try:
+		if len(get_host(zapi, name)) > 0:
+			print("Host {} already exists".format(name))
+			return False
+		
+		else:
+			new_host = zapi.host.create(
+				host=name,
+				status=0,
+				interfaces=[
+					{
+						"type": 1,
+						"main": 1,
+						"useip": 1,
+						"ip": ip,
+						"dns": "",
+						"port": "10050",
+					},	
+					{
+						"type": 2,
+						"main": 1,
+						"useip": 1,
+						"ip": ip,
+						"dns": "",
+						"port": "161",
+						"details": {
+							"version": 2,
+							"community": community,
+						},
+					},
+				],
+				description=description,
+				groups=groups,
+				templates=templates,
+			)
+
+		print("Host", name, "id:", new_host, "created with success")
+		return new_host
+	
+	except Exception as e:
+		print("Error at creating host", name)
+		print(e.__str__())
+			
 
 def create_hosts_inventory(zapi, inventory_vars=[]):
 	hosts_obj = {
